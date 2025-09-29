@@ -1,1 +1,5 @@
-# cd "/C/Users/Astha Issrani/product-data-insights"
+# NOTE: This project is built using Node.js. 
+# Dependencies are listed in package.json.
+# Equivalent NPM packages used:
+csv-parser
+json-bigint

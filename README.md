@@ -1,5 +1,4 @@
-# README.md
-## Product Data Insights Engine
+# Product Data Insights Engine
 This project implements a data analysis pipeline built using Node.js to integrate five disparate data sources (internal catalog, inventory, performance, and competitor/market data) and generate actionable business recommendations based on a custom priority framework.
 
 ## Getting Started

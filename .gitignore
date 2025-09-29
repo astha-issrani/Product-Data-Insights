@@ -1,0 +1,5 @@
+# Dependencies and temporary files
+/node_modules
+
+# Output folders/files (if any)
+/outputs

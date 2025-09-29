@@ -5,7 +5,7 @@ const csv = require('csv-parser');
 // Example of a mapping function
 const KEY_MAP = {
     'identifier': 'product_id',
-    'iem_code': 'product_id',
+    'item_code': 'product_id',
     'sku': 'product_id',
     // ... add mappings for JSON keys if needed
     'old_name': 'new_name'
@@ -25,6 +25,28 @@ function standardizeKeys(dataArray) {
         return newItem;
     });
 }
+
+function processMarketplaceSnapshot(snapshot) {
+    const amazonProducts = snapshot.platforms.amazon.products;
+    
+    // Flatten and rename the 'asin' key to 'product_id'
+    return amazonProducts.map(product => {
+        // Create a new object to avoid modifying the original structure
+        const newProduct = { ...product }; 
+        
+        // 1. Rename 'asin' to 'product_id'
+        newProduct.product_id = newProduct.asin;
+        delete newProduct.asin; // Optional: remove the old key
+
+        // 2. Extract or simplify other nested data (e.g., Best Seller Rank)
+        newProduct.bsr_category = product.best_seller_rank.category;
+        newProduct.bsr_rank = product.best_seller_rank.rank;
+        delete newProduct.best_seller_rank;
+        
+        return newProduct;
+    });
+}
+// This function will return a flat array ready for merging.
 
 function loadCSV(filePath) {
     return new Promise((resolve, reject) => {

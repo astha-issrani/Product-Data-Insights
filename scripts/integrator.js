@@ -1,26 +1,51 @@
-// Data Integration: This module will merge all data sources.
-function integrateData(catalog, inventory, metrics, competitors, marketplace) {
-    const masterCatalog = new Map(); // Use Map for efficient lookups by SKU/ID
+// scripts/integrator.js
 
-    // 1. Build a base structure from the internal catalog (assuming SKU is the key)
-    catalog.forEach(item => {
-        masterCatalog.set(item.SKU, {
+function createBaseCatalog(catalogData) {
+    const masterCatalog = new Map();
+    
+    // Build the base structure using the internal catalog
+    catalogData.forEach(item => {
+        const productId = item.product_id;
+        
+        masterCatalog.set(productId, {
             ...item,
-            inventory: [],
-            performance: {},
-            competitor_data: {},
+            inventory_movements: [],  // For merging inventory history
+            performance_metrics: {}, 
             marketplace_snapshot: {}
         });
     });
+    return masterCatalog;
+}
 
-    // 2. Add data from other files by looking up the common key (SKU/ID)
+function integrateData(catalog, inventory, metrics, marketplace) {
+    const masterCatalog = createBaseCatalog(catalog);
+    
+    // Merge Inventory Movements (Many-to-one relationship)
     inventory.forEach(item => {
-        if (masterCatalog.has(item.SKU)) {
-            masterCatalog.get(item.SKU).inventory.push(item);
+        const productId = item.product_id;
+        if (masterCatalog.has(productId)) {
+            masterCatalog.get(productId).inventory_movements.push(item);
         }
     });
 
-    // ... Repeat for metrics, competitors, and marketplace snapshots
-    
-    return Array.from(masterCatalog.values()); // Return final array of integrated objects
+    // Merge Performance Metrics (One-to-one relationship)
+    metrics.forEach(item => {
+        const productId = item.product_id;
+        if (masterCatalog.has(productId)) {
+            masterCatalog.get(productId).performance_metrics = item;
+        }
+    });
+
+    // Merge Processed Marketplace Snapshot Data
+    marketplace.forEach(item => {
+        const productId = item.product_id;
+        if (masterCatalog.has(productId)) {
+            masterCatalog.get(productId).marketplace_snapshot = item;
+        }
+    });
+
+    // Return final data structure as an array
+    return Array.from(masterCatalog.values()); 
 }
+
+module.exports = { integrateData }; // Export the main integration function

@@ -1,35 +1,10 @@
 // runAnalysis.js
-// main.js or integrator.js
-
-async function loadAllData() {
-    const [catalog, inventory, metrics] = await Promise.all([
-        loadCSV('./internal_catalog_dump.csv'),
-        loadCSV('./inventory_movements.csv'),
-        loadCSV('./performance_metrics.csv')
-    ]);
-
-    // JSON files are loaded sequentially, but processing is handled below
-    const competitorIntelligence = loadJSON('./competitor_intelligence.json');
-    const marketplaceSnapshot = loadJSON('./marketplace_snapshot.json');
-    
-    // Process and flatten the marketplace snapshot immediately
-    const processedMarketplace = processMarketplaceSnapshot(marketplaceSnapshot); 
-
-    // Return the variables ready for merging and analysis
-    return {
-        catalog, 
-        inventory, 
-        metrics, 
-        processedMarketplace, 
-        competitorIntelligence // This remains separate!
-    };
-}
 
 // 1. Import all necessary functions from your scripts/ directory
-const { loadAllData } = require('./scripts/dataloader'); // Assuming loadAllData is exported
+const { loadAllData } = require('./scripts/dataloader'); // Imports the orchestrator function
 const { integrateData } = require('./scripts/integrator');
-const { analyzeData } = require('./scripts/analyzer'); // Assuming this exists
-const { writeOutput } = require('./scripts/utils'); // Assuming a utility function exists
+const { analyzeData } = require('./scripts/analyzer'); // You must create this file and export analyzeData
+const { writeOutput } = require('./scripts/utils'); // You must create this file and export writeOutput
 
 // 2. Define the main function to run the pipeline
 async function main() {
@@ -56,8 +31,9 @@ async function main() {
         console.log("Data integrated into Master Catalog.");
 
         // C. Analyze and Generate Insights
+        // Pass the contextual competitorIntelligence data to the analyzer for every product
         const finalResults = masterArray.map(product => 
-            analyzeData(product, competitorIntelligence) // Pass context data here
+            analyzeData(product, competitorIntelligence) 
         );
         console.log("Analysis complete.");
 
@@ -66,6 +42,7 @@ async function main() {
         console.log("Report saved to outputs/analysis_report.json");
 
     } catch (error) {
+        // Log the error and stop execution gracefully
         console.error("An error occurred during the analysis pipeline:", error);
     }
 }

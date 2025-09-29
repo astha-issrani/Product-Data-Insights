@@ -1,9 +1,11 @@
 // scripts/analyzer.js
 
-function analyzeProduct(product, competitorContext) {
+function analyzeData(product, competitorContext) {
     // 1. Calculate Risk (Using inventory/performance metrics)
-    const currentStock = parseFloat(product.performance_metrics.current_stock || 0);
-    const salesVelocity = parseFloat(product.performance_metrics.sales_velocity || 0);
+    
+    // FIX: Use optional chaining (?.) to safely access nested properties
+    const currentStock = parseFloat(product.performance_metrics?.current_stock || 0);
+    const salesVelocity = parseFloat(product.performance_metrics?.sales_velocity || 0);
 
     // High Risk: Low stock AND high velocity
     let risk_score = 0;
@@ -12,16 +14,20 @@ function analyzeProduct(product, competitorContext) {
     }
     
     // 2. Calculate Opportunity (Using pricing from catalog vs. competitor context)
-    const internalPrice = parseFloat(product.price);
-    const priceErosion = competitorContext.market_signals.price_erosion_rate;
+    
+    // FIX: Ensure internalPrice is a safe number
+    const internalPrice = parseFloat(product.price || 0); 
+    
+    // FIX: Ensure competitorContext exists before accessing its signals
+    const priceErosion = competitorContext?.market_signals?.price_erosion_rate || 0; 
     
     let opportunity_score = 0;
-    // Simple logic: If we are priced well and the market isn't eroding too fast
-    if (internalPrice < 150 && priceErosion < 0.05) {
+    // The comparison will now work correctly even if product.price was missing.
+    if (internalPrice > 0 && internalPrice < 150 && priceErosion < 0.05) {
         opportunity_score = 10;
     }
 
-    // 3. Define Priority (Document this framework clearly in README)
+    // --- You must define 'priority' and 'recommendation' before returning them ---
     let priority = 'Low';
     let recommendation = 'Monitor';
 
@@ -42,5 +48,4 @@ function analyzeProduct(product, competitorContext) {
         opportunity_score: opportunity_score
     };
 }
-
-module.exports = { analyzeProduct };
+module.exports = { analyzeData };

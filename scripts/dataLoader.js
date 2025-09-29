@@ -58,11 +58,14 @@ function loadJSON(filePath) {
 }
 
 // Function to flatten and rename keys for the marketplace snapshot
+// Function to flatten and rename keys for the marketplace snapshot
 function processMarketplaceSnapshot(snapshot) {
+    // Robust check for top-level structure
     if (!snapshot || !snapshot.platforms || !snapshot.platforms.amazon) return [];
     
     const amazonProducts = snapshot.platforms.amazon.products;
-    
+    if (!amazonProducts) return []; // Check if the products array itself exists
+
     return amazonProducts.map(product => {
         const newProduct = { ...product }; 
         
@@ -70,15 +73,20 @@ function processMarketplaceSnapshot(snapshot) {
         newProduct.product_id = newProduct.asin; 
         delete newProduct.asin; 
 
-        // Extract nested data
-        newProduct.bsr_category = product.best_seller_rank.category;
-        newProduct.bsr_rank = product.best_seller_rank.rank;
-        delete newProduct.best_seller_rank;
+        // Extract nested data with robust undefined checks
+        if (product.best_seller_rank) {
+            newProduct.bsr_category = product.best_seller_rank.category;
+            newProduct.bsr_rank = product.best_seller_rank.rank;
+            delete newProduct.best_seller_rank;
+        } else {
+            // Assign null/default values if the rank data is missing
+            newProduct.bsr_category = null;
+            newProduct.bsr_rank = null;
+        }
         
         return newProduct;
     });
 }
-
 // The core orchestrator function
 async function loadAllData() {
     // 1. Load CSVs in parallel (efficiency boost)

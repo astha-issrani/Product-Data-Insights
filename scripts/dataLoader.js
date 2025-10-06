@@ -25,25 +25,39 @@ function standardizeKeys(dataArray) {
             const newKey = KEY_MAP[oldKey.trim()] || oldKey;
             
             // Trim whitespace from the key value and assign it
-            newItem[newKey.trim()] = (item[oldKey] || '').toString().trim();
+            // Handle null/undefined early to avoid empty strings
+            const value = item[oldKey];
+            newItem[newKey.trim()] = (value === null || value === undefined) ? null : (value || '').toString().trim();
         }
         return newItem;
     });
 }
 
-// Helper function to clean 'null' strings to actual null/undefined in data
+// Helper function to clean 'null' strings to actual null/undefined in data (now recursive)
 function cleanNullStrings(item) {
     if (!item) return item;
+    
     const cleaned = { ...item };
-    Object.keys(cleaned).forEach(key => {
-        if (cleaned[key] === 'null' || cleaned[key] === '') {
-            cleaned[key] = null;
-        } else if (typeof cleaned[key] === 'string') {
-            // Optional: Trim all strings
-            cleaned[key] = cleaned[key].trim();
+    
+    // Recursive function to clean nested objects/arrays
+    function cleanRecursive(obj) {
+        if (Array.isArray(obj)) {
+            return obj.map(cleanRecursive);
+        } else if (obj !== null && typeof obj === 'object') {
+            const cleanedObj = {};
+            for (const key in obj) {
+                cleanedObj[key] = cleanRecursive(obj[key]);
+            }
+            return cleanedObj;
+        } else if (typeof obj === 'string') {
+            // Trim strings and convert 'null' or empty to null
+            const trimmed = obj.trim();
+            return (trimmed === 'null' || trimmed === '') ? null : trimmed;
         }
-    });
-    return cleaned;
+        return obj;
+    }
+    
+    return cleanRecursive(cleaned);
 }
 
 // Function to load and parse a CSV file (returns a Promise)
@@ -60,7 +74,7 @@ function loadCSV(filePath) {
             .pipe(csv())
             .on('data', (data) => results.push(data))
             .on('end', () => {
-                // Standardize keys and clean nulls right after loading
+                // Standardize keys first, then clean nulls recursively
                 const standardized = standardizeKeys(results);
                 const cleaned = standardized.map(cleanNullStrings);
                 resolve(cleaned);
@@ -84,13 +98,16 @@ function loadJSON(filePath) {
         const fileContent = fs.readFileSync(filePath, 'utf8');
         // Use JSONbig to safely parse large numbers
         const parsed = JSONbig.parse(fileContent);
-        // If it's an array, standardize and clean
-        if (Array.isArray(parsed)) {
-            const standardized = standardizeKeys(parsed);
-            return standardized.map(cleanNullStrings);
+        
+        // Clean nulls recursively regardless of type
+        const cleaned = cleanNullStrings(parsed);
+        
+        // If it's an array, also standardize keys
+        if (Array.isArray(cleaned)) {
+            const standardized = standardizeKeys(cleaned);
+            return standardized;
         }
-        // If object, clean nulls recursively (simple top-level for now)
-        return cleanNullStrings(parsed);
+        return cleaned;
     } catch (error) {
         console.error(`Error loading JSON from ${filePath}:`, error);
         return null;
@@ -112,7 +129,7 @@ function processMarketplaceSnapshot(snapshot) {
     }
 
     return amazonProducts.map(product => {
-        // Clean the raw product first
+        // Clean the raw product first (recursive)
         const cleanedProduct = cleanNullStrings({ ...product });
         
         const newProduct = { ...cleanedProduct }; 
@@ -129,18 +146,18 @@ function processMarketplaceSnapshot(snapshot) {
         // Extract nested best_seller_rank with robust checks
         if (cleanedProduct.best_seller_rank) {
             newProduct.bsr_category = cleanedProduct.best_seller_rank.category || null;
-            newProduct.bsr_rank = cleanedProduct.best_seller_rank.rank ? parseFloat(cleanedProduct.best_seller_rank.rank) : null;
+            newProduct.bsr_rank = cleanedProduct.best_seller_rank.rank ? parseFloat(cleanedProduct.best_seller_rank.rank) || null : null;
             delete newProduct.best_seller_rank;
         } else {
             newProduct.bsr_category = null;
             newProduct.bsr_rank = null;
         }
 
-        // FIX: Extract price_erosion_rate if present in raw snapshot (per-product or nested)
-        // Assume it might be in product.competitor_data or top-level; adjust based on your JSON structure
+        // Extract price_erosion_rate if present in raw snapshot (per-product or nested)
+        // Check nested competitor_data first, then top-level
         if (cleanedProduct.competitor_data?.price_erosion_rate !== undefined) {
             newProduct.price_erosion_rate = parseFloat(cleanedProduct.competitor_data.price_erosion_rate) || null;
-            // Optionally delete nested if not needed
+            // Optionally delete nested if not needed: delete newProduct.competitor_data;
         } else if (cleanedProduct.price_erosion_rate !== undefined) {
             newProduct.price_erosion_rate = parseFloat(cleanedProduct.price_erosion_rate) || null;
         } else {
@@ -150,6 +167,14 @@ function processMarketplaceSnapshot(snapshot) {
         // Add other potential fields (e.g., competitor_price_index if in raw)
         if (cleanedProduct.competitor_price_index !== undefined) {
             newProduct.competitor_price_index = parseFloat(cleanedProduct.competitor_price_index) || null;
+        }
+
+        // Optional: Extract other common fields if they exist (e.g., current_price, reviews)
+        if (cleanedProduct.current_price !== undefined) {
+            newProduct.current_price = parseFloat(cleanedProduct.current_price) || null;
+        }
+        if (cleanedProduct.review_count !== undefined) {
+            newProduct.review_count = parseInt(cleanedProduct.review_count) || null;
         }
 
         return newProduct;
@@ -197,6 +222,7 @@ async function loadAllData(baseDir = './data') {
         };
     } catch (error) {
         console.error('Error in loadAllData:', error);
+        console.error('Stack trace:', error.stack);
         // Return partial data or empty to prevent full crash
         return {
             catalog: [],

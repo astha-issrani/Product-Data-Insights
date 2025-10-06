@@ -1,0 +1,38 @@
+{
+  "platforms": {
+    "amazon": {
+      "products": [
+        {
+          "asin": "NT-EARBUD-X1",
+          "best_seller_rank": { "category": "Electronics > Headphones", "rank": 1500 },
+          "price_erosion_rate": 3,
+          "competitor_price_index": 0.89
+        },
+        {
+          "asin": "NT-SPEAKER-Z2",
+          "best_seller_rank": { "category": "Electronics > Speakers", "rank": 250 },
+          "price_erosion_rate": 1.5,
+          "competitor_price_index": 1.02
+        },
+        {
+          "asin": "NT-CHARGER-Q3",
+          "best_seller_rank": { "category": "Electronics > Accessories", "rank": 800 },
+          "price_erosion_rate": 4,
+          "competitor_price_index": 0.78
+        },
+        {
+          "asin": "NT-WATCH-S5",
+          "best_seller_rank": { "category": "Wearables", "rank": 1200 },
+          "price_erosion_rate": 2.8,
+          "competitor_price_index": 0.95
+        },
+        {
+          "asin": "NT-TABLET-P6",
+          "best_seller_rank": { "category": "Computing > Tablets", "rank": 5000 },
+          "price_erosion_rate": 3.5,
+          "competitor_price_index": 0.98
+        }
+      ]
+    }
+  }
+}

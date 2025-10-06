@@ -3,7 +3,6 @@
 function createBaseCatalog(catalogData) {
     const masterCatalog = new Map();
     
-    // Build the base structure using the internal catalog
     catalogData.forEach(item => {
         const productId = item.product_id;
         

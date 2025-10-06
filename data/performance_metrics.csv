@@ -1,0 +1,6 @@
+week_ending,product_id,channel,impressions,clicks,conversions,ad_spend,revenue,search_rank_avg,competitor_price_index
+2025-09-21,NT-EARBUD-X1,Walmart,79000,1738,35,2050.00,4724.65,31,0.89
+2025-09-21,NT-SPEAKER-Z2,Amazon,95000,2850,108,2200.00,9719.92,14,1.02
+2025-09-21,NT-CHARGER-Q3,Walmart,55000,880,42,600.00,1385.58,null,0.78
+2025-09-21,NT-WATCH-S5,Amazon,98000,3528,54,3150.00,15066.00,35,0.95
+2025-09-21,NT-TABLET-P6,Amazon,145000,5800,32,4500.00,17599.68,68,0.98
